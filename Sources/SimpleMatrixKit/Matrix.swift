@@ -11,33 +11,10 @@ import Foundation
 /// This structure is similar to a simple array of arrays (2D array).
 /// The main difference is that it enforces the requirement that all of
 /// the inner arrays must be of the same length so that the data forms
-/// a proper matrix.  Various convenience methods and properties are
-/// also included.
+/// a proper matrix.
 public struct Matrix<Value> {
     
     var elements: [[Value]]
-    
-    /// Number of rows in the matrix
-    public var rows: Int { return elements.count }
-    
-    /// Number of columns in the matrix
-    public var cols: Int {
-        if elements.count > 0 {
-            return elements[0].count
-        } else {
-            return 0
-        }
-    }
-    
-    /// Flag for square matrix
-    public var isSquare: Bool {
-        return self.rows == self.cols
-    }
-    
-    /// Flag for empty matrix
-//    public var isEmpty: Bool {
-//        return rows==0 || cols==0
-//    }
     
     // MARK: Initializers
             
@@ -86,108 +63,19 @@ public struct Matrix<Value> {
     /// Access an element of the matrix
     public subscript(row: Int, col: Int) -> Value {
         get {
-            guard row < rows && col < cols else {
+            guard row < rows && col < cols && row >= 0 && col >= 0 else {
                 preconditionFailure("Accessed out of range matrix Value: Matrix is \(rows) x \(col). Read Value \(row),\(col).")
             }
             return elements[row][col]
         }
         set {
-            guard row < rows && col < cols else {
+            guard row < rows && col < cols && row >= 0 && col >= 0 else {
                 preconditionFailure("Accessed out of range matrix Value: Matrix is \(rows) x \(col). Set Value \(row),\(col).")
             }
             elements[row][col] = newValue
         }
     }
-    
-    /// Extract a row from the matrix
-    /// - Parameter row: the row to extract
-    /// - Returns: a vector of element values
-    public func getRow(_ row: Int) -> [Value] {
-        guard row < rows else { return [Value]() }
-        return elements[row]
-    }
-    
-    /// Extract a column from the matrix
-    /// - Parameter col: the column to extract
-    /// - Returns: a vector of element values
-    public func getCol(_ col: Int) -> [Value] {
-        guard col < cols else { return [Value]() }
-        return self[0..<rows, col..<col+1].vectorized
-    }
-    
-    /// Return matrix elements expressed as an array of arrays by rows (2D array)
-    public var allRows: [[Value]] {
-        return elements
-    }
-    
-    /// Return matrix elements as an array of arrays by columns (2D array of matrix transpose)
-    public var allCols: [[Value]] {
-        var allCols = [[Value]]()
-        for col in 0..<cols {
-            allCols.append(getCol(col))
-        }
-        return allCols
-    }
-    
-    /// Return an array of elements along the main diagonal of the matrix
-    public var mainDiagonal: [Value] {
-        return (0..<Swift.min(rows,cols)).map { self[$0,$0]}
-    }
-    
-    /// Return matrix elements as a vector with rows arranged end to end.
-    public var vectorized: [Value] {
-        return self.elements.flatMap({$0})
-    }
-    
-    // MARK: Submatrices
-    
-    /// Access a sub-matrix described by ranges of rows and columns
-    public subscript<R>(rowRange: R, colRange: R) -> Matrix<Value> where R: RangeExpression, R.Bound == Int {
-        var subMatVecs: [[Value]] = []
-        for rowVec in self.elements[rowRange] {
-            subMatVecs.append(Array(rowVec[colRange]))
-        }
-        return Matrix(array2D: subMatVecs)
-    }
-    
-    /// Submatrix of selected rows
-    /// - Parameter rowIndexes: indexes of rows to extract
-    /// - Returns: Matrix with selected rows in specified order
-    public func subMatrix(rowIndexes: [Int]) -> Matrix<Value> {
-        guard rowIndexes.allSatisfy({ $0>=0 && $0<rows})  else {
-            preconditionFailure("Accessed out of range submatrix")
-        }
-        return Matrix(array2D: rowIndexes.map{ elements[$0] } )
-    }
-    
-    /// Submatrix of selected columns
-    /// - Parameter colIndexes: indexes of columns to extract
-    /// - Returns: Matrix with selected col in specified order
-    public func subMatrix(colIndexes: [Int]) -> Matrix<Value> {
-        return self.transpose.subMatrix(rowIndexes: colIndexes).transpose
-    }
-    
-    /// Submatrix of selected rows and columns
-    /// - Parameters:
-    ///   - rowIndexes: indexes of rows to extract
-    ///   - colIndexes: indexes of columns to extract
-    /// - Returns: Matrix with selected rows and columns in specified order
-    public func submatrix(rowIndexes: [Int], colIndexes: [Int]) -> Matrix<Value> {
-        return self.subMatrix(rowIndexes: rowIndexes).subMatrix(colIndexes: colIndexes)
-    }
-    
-    // MARK: Derived Matrices
-    
-    public var transpose: Matrix<Value> {
-        return Matrix(rows: self.cols, cols: self.rows, valueArray: self.allCols.flatMap { $0 } )
-    }
-    
-    public func elementMap<MappedValue>( transform: (Value) -> MappedValue ) -> Matrix<MappedValue> {
-        return Matrix<MappedValue>(rows: self.rows, cols: self.cols,
-                                   valueArray: self.vectorized.map(transform))
-    }
-    
-    
+        
     // MARK: Constant Matrices
     
     /// An empty matrix
@@ -251,7 +139,17 @@ extension Matrix: Collection {
 
 }
 
-// MARK: Custom String Convertable Conformance
+// MARK: Matrix Representable Conformance
+
+extension Matrix: MatrixRepresentable {
+    
+    /// Return matrix elements expressed as an array of arrays by rows (2D array)
+    public var allRows: [[Value]] {
+        return elements
+    }
+}
+
+// MARK: Custom String Convertible Conformance
 
 extension Matrix: CustomStringConvertible where Value: CustomStringConvertible {
     
@@ -260,13 +158,19 @@ extension Matrix: CustomStringConvertible where Value: CustomStringConvertible {
         let maxRows = 5
         let maxCols = 5
         let cellLength = 6
-//        return elements.reduce("") { str, rowVec in
-//            str + rowVec.reduce("[ ") { rowStr, element in
-//                rowStr
-//                    + " "
-//                    + element.description.padding(toLength: cellLength, withPad: " ", startingAt: 0)
-//            } + self.cols <= maxCols ? " ]\n" : " ...\n"
-//        }
+        /*
+         
+        I BELIEVE THIS CODE SHOULD WORK, BUT XCODE HAS PROBLEMS WITH TYPE INFERENCE
+        
+         return elements.reduce("") { str, rowVec in
+            str + rowVec.reduce("[ ") { rowStr, element in
+                rowStr
+                    + " "
+                    + element.description.padding(toLength: cellLength, withPad: " ", startingAt: 0)
+            } + self.cols <= maxCols ? " ]\n" : " ...\n"
+        }
+         
+        */
         var str: String = "\(self.rows) x \(self.cols) Matrix:\n"
         for row in 0..<Swift.min(self.rows,maxRows) {
             str += "[ "
@@ -281,56 +185,8 @@ extension Matrix: CustomStringConvertible where Value: CustomStringConvertible {
     }
     
 }
-    
-    
 
-// MARK: Equatable Conformance and Properties
+// MARK: Equatable Conformance
 
-extension Matrix: Equatable where Value: Equatable {
-    
-    public var isSymmetric: Bool {
-        guard self.isSquare else { return false }
-        for row in 0..<self.rows {
-            for col in 0..<self.cols {
-                if self[row,col] != self[col,row] {
-                    return false
-                }
-            }
-        }
-        return true
-    }
-    
-}
-
-// MARK: Matrix Manipulation
-
-public func hCat<Value>(_ m0: Matrix<Value>, _ m1: Matrix<Value>) throws -> Matrix<Value> {
-    guard m0.rows == m1.rows else {
-        throw MatrixMathError.nonconformingMatrices
-    }
-    let m0rows = m0.allRows
-    let m1rows = m1.allRows
-    let catArray = (0..<m1.rows).map { m0rows[$0]+m1rows[$0] }
-    return Matrix(array2D: catArray)
-}
-
-public func vCat<Value>(_ m0: Matrix<Value>, _ m1: Matrix<Value>) throws -> Matrix<Value> {
-    return try hCat(m0.transpose, m1.transpose).transpose
-}
-
-precedencegroup MatrixConcatinationPrecedence {
-    associativity: left
-    higherThan: RangeFormationPrecedence
-    lowerThan: AdditionPrecedence
-}
-
-infix operator <|> : MatrixConcatinationPrecedence
-public func <|><Value>(lhs: Matrix<Value>, rhs: Matrix<Value>) throws -> Matrix<Value> {
-    return try hCat(lhs,rhs)
-}
-
-infix operator <-> : MatrixConcatinationPrecedence
-public func <-><Value>(lhs: Matrix<Value>, rhs: Matrix<Value>) throws -> Matrix<Value> {
-    return try vCat(lhs,rhs)
-}
+extension Matrix: Equatable where Value: Equatable {}
 

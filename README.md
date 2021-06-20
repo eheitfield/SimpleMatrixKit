@@ -2,9 +2,12 @@
 
 ## Overview
 
-SimpleMatrixKit is an easy to use matrix library for Swift.  The library is built around a general `Matrix` type which provides functionality for storing and manipulating balanced, two-dimensional arrays of objects.  This struct can be used in any circumstance where you might normally use an array of array types, but would like to enforce the constraint that all inner arrays have the same length.  `Matrix` includes methods for accessing individual elements,  extracting submatrices, and producing derived matrices such as the matrix transpose.  `Matrix` can be treated as a `Collection`  where each element corresponds to a row of the matrix. The library includes two operators, `<|>` and `<->`, for horizontally and vertically concatenating appropriately conformable matrices.
+SimpleMatrixKit is an easy to use matrix library for Swift.  The library is built around a general `Matrix` type which provides functionality for storing and manipulating balanced, two-dimensional arrays of objects.  This struct can be used in any circumstance where you might normally use an array of array types but would like to enforce the constraint that all inner arrays have the same length.  `Matrix` includes methods for accessing individual elements,  extracting submatrices, and producing derived matrices such as the matrix transpose.  `Matrix` can be treated as a `Collection`  where each element corresponds to a row of the matrix. The library includes two operators, `<|>` and `<->`, for horizontally and vertically concatenating appropriately conformable matrices.
 
-More functionality is available for matrices of numerical values.  The library supports the standard matrix operators `+`, `-`, and `*` for matrices of `Numeric` types, which include both integers and floating point numbers. Most other linear algebra functionality requires that matrix values conform to the `FloatingPoint` protocol, which includes `Double`, `Float`, and `CGFloat`, but not `Int`.  Such real-valued matrices can report their determinants, traces and other statistics.  In addition, they can be used to initialize a `NonsingularMatrix` type, which provides functionality for matrix inversion, LUP and Cholesky factorization (for symmetric matrices), and linear system solving.
+More functionality is available for matrices of numerical values.  The library supports the standard matrix operators `+`, `-`, and `*` for matrices of `Numeric` types, which include both integers and floating point numbers. Most other linear algebra functionality requires that matrix values conform to the `FloatingPoint` protocol, which includes `Double`, `Float`, and `CGFloat`, but not `Int`.  Such real-valued matrices can report their determinants, traces and other statistics.  In addition, they can be used to initialize a `NonsingularMatrix` type, which provides functionality for matrix inversion, LUP factorization,  and linear system solving.
+
+The library's `MatrixRepresentable` protocol allows users to define their own matrix types.  In order to conform
+to this protocol a type must simply be able to provide an array of its rows.  This protocol provides a number of standard matrix properties and methods, and conforming types can be used with the various matrix operators described above. Both `Matrix` and `NonsingularMatrix` conform to `MatrixRepresentable` so, for example, one can use the `*` operator to multiply a `Matrix` type by a `NonsingularMatrix` type. Note, however, that most matrix operators and methods return a `Matrix` type, regardless of the types passed as input.   
 
 ## Handling Errors
 
@@ -36,7 +39,7 @@ The mean squared error is
 ```
 let mse = try resid.transpose * resid / Double(n)
 ```
-Here `mse` is a 1x1 element matrix.  We can use a subsript to access the underlying `Double` value.
+Here `mse` is a 1x1 element matrix.  We can use a subscript to access the underlying `Double` value.
 ```
 let mseAsDouble = mse[0,0]
 ```
@@ -52,11 +55,11 @@ let xx = try x.transpose * x
 let xy = try x.transpose * y
 let beta = try NonsingularMatrix(xx).solve(xy)
 ```
-Here's a more concise, but somewhat less efficient, way of computing beta.
+Here's a more concise but less efficient way of computing beta.
 ```
 let beta2 = try NonsingularMatrix(x.transpose*x).inverse() * x.transpose * y
 ```
-In general it's best to avoid calculating the matrix inverse if it isn't needed.  ``beta2`` requires about four times as many calculations than ``beta``.
+In general it's best to avoid calculating the matrix inverse if it isn't needed.  ``beta2`` requires about four times as many calculations as ``beta``.
 
 Here's what the example code above might look like with error handling.
 ```
@@ -74,16 +77,20 @@ do {
     let resid = try data - ones * avg.transpose
     let mse = try resid.transpose * resid / Double(n)
     let mseAsDouble = mse[0,0]
+    print(mseAsDouble)
     let y = Matrix(rows: n, cols: 1, valueArray: [12.2, 14.2, 23.2, 8.0, 9.2])
     let x = try ones <|> data
     let xx = try x.transpose * x
     let xy = try x.transpose * y
     let beta = try NonsingularMatrix(xx).solve(xy)
+    print(beta)
     let beta2 = try NonsingularMatrix(x.transpose*x).inverse() * x.transpose * y
-} catch MatrixMathError.singularMatrixTreatedAsNonsingular {
-    print("Looks like you have a problem with multicolinearity.")
-    print("Better collect some more observations or drop some variables!")
-} catch MatrixMathError.nonconformingMatrices {
+    print(beta2)
+} catch MatrixError.singularMatrixTreatedAsNonsingular {
+    print("Looks like you have have a problem with multicolinearity.")
+    print("Better get some more data or drop some variables!")
+} catch MatrixError.nonconformingMatrices {
+    print("Something went wrong.")
     print("Check your matrix dimensions.")
 } catch {
     print("Something terrible has happened and I don't know what it is.")

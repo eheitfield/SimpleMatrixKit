@@ -7,8 +7,6 @@
 
 import Foundation
 
-
-
 // MARK: Standard matrices
 
 extension Matrix where Value: FloatingPoint {
@@ -57,7 +55,14 @@ extension Matrix where Value: FloatingPoint {
 
 extension Matrix where Value: FloatingPoint {
     
+    /// The determinant of a square matrix
+    /// - Throws: MatrixError
+    /// - Returns: matrix determinant
+    ///
+    /// The determinant is computed using the matrix LUP factorization. If no such
+    /// factorization exists the matrix must be singular with zero determinant.
     public func determinant() throws -> Value {
+        try MatrixError.testSquare(self)
         do {
             let nonsingular = try NonsingularMatrix(self)
             let nSwaps = nonsingular.p.mainDiagonal.reduce(0.0) { $0 + ($1 == 0 ? 0.5 : 0.0) }
@@ -65,70 +70,72 @@ extension Matrix where Value: FloatingPoint {
             let detL = nonsingular.l.mainDiagonal.reduce(1) { $0*$1 }
             let detU = nonsingular.u.mainDiagonal.reduce(1) { $0*$1 }
             return detP*detL*detU
-        } catch MatrixMathError.factorizationUndefined {
+        } catch MatrixError.factorizationUndefined {
             return Value.zero
         }
     }
     
-    public func trace() -> Value {
-        return self.mainDiagonal.reduce(Value(1)) { $0*$1 }
+    public func trace() throws -> Value {
+        try MatrixError.testSquare(self)
+        return self.mainDiagonal.reduce(Value.zero) { $0+$1 }
     }
 
 }
 
 // MARK: Matrix math operations
 
-public func +<Value: Numeric>(lhs: Matrix<Value>, rhs: Matrix<Value>) throws -> Matrix<Value> {
+/// Matrix addition
+public func +<T: MatrixRepresentable, U: MatrixRepresentable, V: Numeric>(lhs: T, rhs: U) throws -> Matrix<V> where V == T.Value, T.Value == U.Value {
+    try MatrixError.testEqualSize(lhs,rhs)
     guard lhs.rows == rhs.rows && lhs.cols == rhs.cols else {
-        throw MatrixMathError.nonconformingMatrices
+        throw MatrixError.nonconformingMatrices
     }
-    var result = lhs
-    for row in 0..<lhs.rows {
-        for col in 0..<lhs.cols {
-            result[row,col] += rhs[row,col]
+    let array2D = zip(lhs.allRows,rhs.allRows).map { rowPair in
+        zip(rowPair.0,rowPair.1).map { $0 + $1 }
+    }
+    return Matrix(array2D: array2D)
+}
+
+/// Matrix subtraction
+public func -<T: MatrixRepresentable, U: MatrixRepresentable, V: Numeric>(lhs: T, rhs: U) throws -> Matrix<V> where V == T.Value, T.Value == U.Value {
+    try MatrixError.testEqualSize(lhs,rhs)
+    let array2D = zip(lhs.allRows,rhs.allRows).map { rowPair in
+        zip(rowPair.0,rowPair.1).map { $0 - $1 }
+    }
+    return Matrix(array2D: array2D)
+}
+
+/// Matrix multiplication
+public func *<T: MatrixRepresentable, V: Numeric>(lhs: V, rhs: T) -> Matrix<V> where V == T.Value {
+    let valueArray = rhs.allRows.flatMap { $0 }.map { $0*lhs  }
+    return Matrix(rows: rhs.rows, cols: rhs.cols, valueArray: valueArray)
+}
+
+/// Left-side scalar multiplication
+public func *<T: MatrixRepresentable, V: Numeric>(lhs: T, rhs: V) -> Matrix<V> where V == T.Value {
+    let valueArray = lhs.allRows.flatMap { $0 }.map { $0*rhs  }
+    return Matrix(rows: lhs.rows, cols: lhs.cols, valueArray: valueArray)
+}
+
+/// Right-side scalar multiplication
+public func *<T: MatrixRepresentable, U: MatrixRepresentable, V: Numeric>(lhs: T, rhs: U) throws -> Matrix<V> where V == T.Value, T.Value == U.Value {
+    try MatrixError.testMultiplicationConformance(lhs,rhs)
+    var result: Matrix<V> = Matrix(rows: lhs.rows, cols: rhs.cols, constantValue: V.zero)
+    for (i,row) in lhs.allRows.enumerated() {
+        for (j,col) in rhs.allCols.enumerated() {
+            result[i,j] = dotProduct(row,col)
         }
     }
     return result
 }
 
-public func -<Value: Numeric>(lhs: Matrix<Value>, rhs: Matrix<Value>) throws -> Matrix<Value> {
-    guard lhs.rows == rhs.rows && lhs.cols == rhs.cols else {
-        throw MatrixMathError.nonconformingMatrices
-    }
-    var result = lhs
-    for row in 0..<lhs.rows {
-        for col in 0..<lhs.cols {
-            result[row,col] -= rhs[row,col]
-        }
-    }
-    return result
+/// Right-side scalar division
+public func /<T: MatrixRepresentable, V: FloatingPoint>(lhs: T, rhs: V) -> Matrix<V> where V == T.Value {
+    let valueArray = lhs.allRows.flatMap { $0 }.map { $0*rhs  }
+    return Matrix(rows: lhs.rows, cols: lhs.cols, valueArray: valueArray)
 }
 
-public func *<Value: Numeric>(lhs: Value, rhs: Matrix<Value>) -> Matrix<Value> {
-    return rhs.elementMap { lhs*$0 }
-}
-
-public func *<Value: Numeric>(lhs: Matrix<Value>, rhs: Value) -> Matrix<Value> {
-    return lhs.elementMap { rhs*$0 }
-}
-
-public func *<Value: Numeric>(lhs: Matrix<Value>, rhs: Matrix<Value>) throws -> Matrix<Value> {
-        guard lhs.cols == rhs.rows else {
-        throw MatrixMathError.nonconformingMatrices
-    }
-    var result: Matrix<Value> = Matrix(rows: lhs.rows, cols: rhs.cols, constantValue: 0)
-    for row in 0..<lhs.rows {
-        for col in 0..<rhs.cols {
-            result[row,col] = dotProduct(lhs.getRow(row),rhs.getCol(col))
-        }
-    }
-    return result
-}
-
-public func /<Value: FloatingPoint>(lhs: Matrix<Value>, rhs: Value) -> Matrix<Value> {
-    return lhs.elementMap { rhs/$0 }
-}
-
+// MARK: Helper functions
 
 fileprivate func dotProduct<Value: Numeric>(_ v0: Array<Value>,_ v1: Array<Value>) -> Value {
     return zip(v0,v1).reduce(0) { $0 + $1.0*$1.1 }

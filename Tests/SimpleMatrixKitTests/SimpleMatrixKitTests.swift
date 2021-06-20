@@ -116,6 +116,17 @@
             XCTAssertThrowsError(try NonsingularMatrix(det0Mat).inverse())
         }
         
+        func testMixedTypes() {
+            do {
+                let nsMat = try NonsingularMatrix(det24Mat)
+                let generalMat = try nsMat*eye
+                XCTAssertEqual(generalMat, det24Mat)
+                let _ = try nsMat <-> diagFP
+            } catch {
+                XCTFail()
+            }
+        }
+        
         func testExample() {
             do {
                 let data: Matrix<Double> = [
@@ -131,16 +142,19 @@
                 let resid = try data - ones * avg.transpose
                 let mse = try resid.transpose * resid / Double(n)
                 let mseAsDouble = mse[0,0]
+                print(mseAsDouble)
                 let y = Matrix(rows: n, cols: 1, valueArray: [12.2, 14.2, 23.2, 8.0, 9.2])
                 let x = try ones <|> data
                 let xx = try x.transpose * x
                 let xy = try x.transpose * y
                 let beta = try NonsingularMatrix(xx).solve(xy)
+                print(beta)
                 let beta2 = try NonsingularMatrix(x.transpose*x).inverse() * x.transpose * y
-            } catch MatrixMathError.singularMatrixTreatedAsNonsingular {
+                print(beta2)
+            } catch MatrixError.singularMatrixTreatedAsNonsingular {
                 print("Looks like you have have a problem with multicolinearity.")
                 print("Better get some more data or drop some variables!")
-            } catch MatrixMathError.nonconformingMatrices {
+            } catch MatrixError.nonconformingMatrices {
                 print("Something went wrong.")
                 print("Check your matrix dimensions.")
             } catch {
