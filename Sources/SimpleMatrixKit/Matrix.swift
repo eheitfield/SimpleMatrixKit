@@ -21,7 +21,7 @@ public struct Matrix<Value> {
     /// Create a matrix from a balanced 2D array of values.
     /// - Parameter array2D: an array of arrays
     /// Note: Each second level array of ''array2D'' must have the same length.
-    public init( array2D: [[Value]]) {
+    public init( array2D: [[Value]])  {
         let rows = array2D.count
         if rows <= 0 {
             self.init(rows: 0, cols: 0 , valueArray: [])
@@ -32,11 +32,15 @@ public struct Matrix<Value> {
             self.init(rows: 0, cols: 0, valueArray: [])
             return
         }
-        guard array2D.reduce(true, {$0 && $1.count==cols}) else {
-            preconditionFailure("Array2D has inconsistent row lengths.")
+        guard array2D.allSatisfy({$0.count==cols}) else {
+            preconditionFailure("Matrix cannot be instantiated from unbalanced array.")
         }
         let valueArray = array2D.flatMap({$0})
         self.init(rows: rows, cols: cols, valueArray: valueArray)
+    }
+    
+    public init<T: MatrixRepresentable>(matrix: T) where Value == T.Value {
+        self.init(array2D: matrix.allRows)
     }
         
     /// Create a constant matrix.
@@ -51,7 +55,7 @@ public struct Matrix<Value> {
     
     public init(rows: Int, cols: Int, valueArray: [Value]) {
         guard valueArray.count == rows*cols else {
-            preconditionFailure("Value array does not match matrix size")
+            preconditionFailure("Flat array used to instantiate matrix must contain rows*col elements.")
         }
         self.elements = (0..<rows).map { row in
             Array(valueArray[row*cols..<(row+1)*cols])
@@ -64,13 +68,13 @@ public struct Matrix<Value> {
     public subscript(row: Int, col: Int) -> Value {
         get {
             guard row < rows && col < cols && row >= 0 && col >= 0 else {
-                preconditionFailure("Accessed out of range matrix Value: Matrix is \(rows) x \(col). Read Value \(row),\(col).")
+                preconditionFailure("Accessed out of range matrix Value:\nMatrix is \(rows) x \(col). Read Value \(row),\(col).")
             }
             return elements[row][col]
         }
         set {
             guard row < rows && col < cols && row >= 0 && col >= 0 else {
-                preconditionFailure("Accessed out of range matrix Value: Matrix is \(rows) x \(col). Set Value \(row),\(col).")
+                preconditionFailure("Accessed out of range matrix Value:\nMatrix is \(rows) x \(col). Set Value \(row),\(col).")
             }
             elements[row][col] = newValue
         }
@@ -147,6 +151,7 @@ extension Matrix: MatrixRepresentable {
     public var allRows: [[Value]] {
         return elements
     }
+    
 }
 
 // MARK: Custom String Convertible Conformance

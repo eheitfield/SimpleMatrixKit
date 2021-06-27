@@ -10,30 +10,51 @@ import Foundation
 // MARK: Matix Manipulation Errors
 
 /// Matrix manipulation errors
-enum MatrixError: Error {
-    case nonconformingMatrices
+public enum MatrixError: Error {
+
+    public enum ConformanceRule {
+        case addition, multiplication, horizontalConcatenation, verticalConcatenation
+    }
+    
+    case nonconformingMatrices(rule: ConformanceRule)
     case squareOperationOnNonsquareMatrix
     case symmetricOperationOnNonsymmetricMatrix
     case factorizationUndefined
     case singularMatrixTreatedAsNonsingular
+    case matrixManipulationError // generic error type for cases not covered above
+    
 }
 
 // MARK: Localized Error Conformance
 
 extension MatrixError: LocalizedError {
-    var errorDescription: String? {
+    public var errorDescription: String? {
+        var str = ""
         switch self {
-        case .nonconformingMatrices:
-            return "Opertion on nonconforming matrices."
+        case .nonconformingMatrices(let rule):
+            str += "Operation on nonconforming matrices."
+            switch rule {
+            case .addition:
+                str += "\nLeft and right matrices must be the same size."
+            case .multiplication:
+                str += "\nLeft matrix row count must match right matrix column count."
+            case .horizontalConcatenation:
+                str += "\nBoth matrices must have matching row counts."
+            case .verticalConcatenation:
+                str += "\nBoth matrices must have matching column counts."
+            }
         case .squareOperationOnNonsquareMatrix:
-            return "Square matrix operation on non-square matrix."
+            str += "Square matrix operation on non-square matrix."
         case .symmetricOperationOnNonsymmetricMatrix:
-            return "Symmetric matrix operation on non-symmetric matrix."
+            str += "Symmetric matrix operation on non-symmetric matrix."
         case .factorizationUndefined:
-            return "Matrix factorization undefined."
+            str += "Matrix factorization undefined."
         case .singularMatrixTreatedAsNonsingular:
-            return "Nonsingular matrix operation on singular matrix."
+            str += "Nonsingular matrix operation on singular matrix."
+        default:
+            str += "Matrix manipulation error."
         }
+        return str
     }
 }
 
@@ -46,19 +67,19 @@ extension MatrixError {
     }
     
     static func testMultiplicationConformance<T: MatrixRepresentable, U: MatrixRepresentable>(_ m0: T, _ m1: U) throws {
-        guard m0.cols == m1.rows else { throw Self.nonconformingMatrices }
+        guard m0.cols == m1.rows else { throw Self.nonconformingMatrices(rule: .multiplication) }
     }
     
     static func testEqualSize<T: MatrixRepresentable, U: MatrixRepresentable>(_ m0: T, _ m1: U) throws {
-        guard m0.rows == m1.rows && m0.cols == m1.cols else { throw Self.nonconformingMatrices}
+        guard m0.rows == m1.rows && m0.cols == m1.cols else { throw Self.nonconformingMatrices(rule: .addition) }
     }
     
     static func testEqualRows<T: MatrixRepresentable, U: MatrixRepresentable>(_ m0: T, _ m1: U) throws {
-        guard m0.rows == m1.rows else { throw Self.nonconformingMatrices}
+        guard m0.rows == m1.rows else { throw Self.nonconformingMatrices(rule: .horizontalConcatenation) }
     }
     
     static func testEqualColumns<T: MatrixRepresentable, U: MatrixRepresentable>(_ m0: T, _ m1: U) throws {
-        guard m0.cols == m1.cols else { throw Self.nonconformingMatrices}
+        guard m0.cols == m1.cols else { throw Self.nonconformingMatrices(rule: .verticalConcatenation) }
     }
 
 }

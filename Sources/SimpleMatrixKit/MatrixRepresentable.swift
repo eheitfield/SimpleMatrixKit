@@ -106,7 +106,7 @@ public extension MatrixRepresentable {
     /// - Returns: Matrix with selected rows in specified order
     func subMatrix(rowIndexes: [Int]) -> Matrix<Value> {
         guard rowIndexes.allSatisfy({ $0>=0 && $0<rows})  else {
-            preconditionFailure("Accessed out of range submatrix")
+            preconditionFailure("Attempted to access out of range matrix element.")
         }
         return Matrix(array2D: rowIndexes.map{ getRow($0) } )
     }
@@ -129,7 +129,7 @@ public extension MatrixRepresentable {
 
 }
 
-public extension MatrixRepresentable where Value: Equatable{
+public extension MatrixRepresentable where Value: Equatable {
     
     var isSymmetric: Bool {
         guard self.isSquare else { return false }

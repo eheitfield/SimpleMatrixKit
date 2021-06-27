@@ -8,9 +8,7 @@
 import Foundation
 
 public func hCat<T: MatrixRepresentable, U: MatrixRepresentable,V>(_ m0: U, _ m1: T) throws -> Matrix<V> where V == T.Value, T.Value == U.Value {
-    guard m0.rows == m1.rows else {
-        throw MatrixError.nonconformingMatrices
-    }
+    try MatrixError.testEqualRows(m0, m1)
     let m0rows = m0.allRows
     let m1rows = m1.allRows
     let catArray = (0..<m1.rows).map { m0rows[$0]+m1rows[$0] }
