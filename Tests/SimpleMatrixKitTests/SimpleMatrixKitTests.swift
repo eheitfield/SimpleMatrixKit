@@ -170,6 +170,39 @@
             }
         }
         
+        func testErrors() {
+            let m = Matrix(rows: 3, cols: 2, valueArray: [1,2,3,4,5,6])
+            let n = Matrix(rows: 2, cols: 3, valueArray: [1,2,3,4,5,6])
+            do {
+                let _ = try m <|> n
+            } catch MatrixError.nonconformingMatrices(rule: let rule) {
+                XCTAssertEqual(rule, .horizontalConcatenation)
+            } catch {
+                XCTFail()
+            }
+            do {
+                let _ = try m <-> n
+            } catch MatrixError.nonconformingMatrices(rule: let rule) {
+                XCTAssertEqual(rule, .verticalConcatenation)
+            } catch {
+                XCTFail()
+            }
+            do {
+                let _ = try m + n
+            } catch MatrixError.nonconformingMatrices(rule: let rule) {
+                XCTAssertEqual(rule, .addition)
+            } catch {
+                XCTFail()
+            }
+            do {
+                let _ = try n * m
+            } catch MatrixError.nonconformingMatrices(rule: let rule) {
+                XCTAssertEqual(rule, .multiplication)
+            } catch {
+                XCTFail()
+            }
+        }
+        
         func testExample() {
             do {
                 let data: Matrix<Double> = [
