@@ -102,58 +102,52 @@
         }
         
         func testSquareRealMatrix() {
-            do {
-                let a: Matrix<Double> = [
-                    [1,2,4],
-                    [4,5,6],
-                    [7,8,12]
-                ]
-                let aDet: Double = -12
-                let aInv: Matrix<Double> = [
-                    [-1.00000,  -0.66667,   0.66667],
-                    [ 0.50000,   1.33333,  -0.83333],
-                    [ 0.25000,  -0.50000,   0.25000]
-                ]
-                let b: Matrix<Double> = [
-                    [22,33,44,55  ],
-                    [7,-11,101,12 ],
-                    [0,77,14,123  ],
-                    [11,-11,34,45 ]
-                ]
-                let bDet: Double = -8629346
-                let bInv: Matrix<Double> = [
-                    [ 0.0480085,  -0.0204822,  -0.0223688,   0.0079262,],
-                    [ 0.0127404,   0.0031384,   0.0040498,  -0.0274779,],
-                    [-0.0010058,   0.0120589,   0.0013448,  -0.0056623,],
-                    [-0.0078612,  -0.0033372,   0.0054418,   0.0178461,]
-                ]
-                let c: DblMatrix = [
-                    [1,2,3,4],
-                    [5,6,7,8],
-                    [9,19,11,12],
-                    [14,15,16,17]
-                ]
-                let cDet: Double = 0
-                let d: DblMatrix = [
-                    [1,0,0,0,0],
-                    [0,0,1,0,0],
-                    [0,0,0,0,1],
-                    [0,1,0,0,0],
-                    [0,0,0,1,0]
-                ]
-                let dDet: Double = -1
-                print(try SquareRealMatrix(d).determinant())
-                XCTAssertTrue(isClose(v0: try SquareRealMatrix(a).determinant(), v1: aDet))
-                XCTAssertTrue(isClose(m0: try SquareRealMatrix(a).inverse(), m1: aInv))
-                XCTAssertTrue(isClose(v0: try SquareRealMatrix(b).determinant(), v1: bDet))
-                XCTAssertTrue(isClose(m0: try SquareRealMatrix(b).inverse(), m1: bInv))
-                XCTAssertTrue(isClose(v0: try SquareRealMatrix(c).determinant(), v1: cDet))
-                XCTAssertTrue(isClose(v0: try SquareRealMatrix(d).determinant(), v1: dDet))
-                XCTAssertTrue(isClose(m0: try SquareRealMatrix(d).inverse(), m1: d.transpose))
-            } catch {
-                print(error.localizedDescription)
-                XCTFail()
-            }
+            let a: Matrix<Double> = [
+                [1,2,4],
+                [4,5,6],
+                [7,8,12]
+            ]
+            let aDet: Double = -12
+            let aInv: Matrix<Double> = [
+                [-1.00000,  -0.66667,   0.66667],
+                [ 0.50000,   1.33333,  -0.83333],
+                [ 0.25000,  -0.50000,   0.25000]
+            ]
+            let b: Matrix<Double> = [
+                [22,33,44,55  ],
+                [7,-11,101,12 ],
+                [0,77,14,123  ],
+                [11,-11,34,45 ]
+            ]
+            let bDet: Double = -8629346
+            let bInv: Matrix<Double> = [
+                [ 0.0480085,  -0.0204822,  -0.0223688,   0.0079262,],
+                [ 0.0127404,   0.0031384,   0.0040498,  -0.0274779,],
+                [-0.0010058,   0.0120589,   0.0013448,  -0.0056623,],
+                [-0.0078612,  -0.0033372,   0.0054418,   0.0178461,]
+            ]
+            let c: DblMatrix = [
+                [1,2,3,4],
+                [5,6,7,8],
+                [9,19,11,12],
+                [14,15,16,17]
+            ]
+            let cDet: Double = 0
+            let d: DblMatrix = [
+                [1,0,0,0,0],
+                [0,0,1,0,0],
+                [0,0,0,0,1],
+                [0,1,0,0,0],
+                [0,0,0,1,0]
+            ]
+            let dDet: Double = -1
+            XCTAssertTrue(isClose(v0: try SquareRealMatrix(a).determinant(), v1: aDet))
+            XCTAssertTrue(isClose(m0: try SquareRealMatrix(a).inverse(), m1: aInv))
+            XCTAssertTrue(isClose(v0: try SquareRealMatrix(b).determinant(), v1: bDet))
+            XCTAssertTrue(isClose(m0: try SquareRealMatrix(b).inverse(), m1: bInv))
+            XCTAssertTrue(isClose(v0: try SquareRealMatrix(c).determinant(), v1: cDet))
+            XCTAssertTrue(isClose(v0: try SquareRealMatrix(d).determinant(), v1: dDet))
+            XCTAssertTrue(isClose(m0: try SquareRealMatrix(d).inverse(), m1: d.transpose))
         }
         
         func testMixedTypes() {
@@ -216,9 +210,9 @@
                 let ones = Matrix<Double>.ones(rows: n, cols: 1)
                 let avg = try data.transpose * ones / Double(n)
                 let resid = try data - ones * avg.transpose
-                let mse = try resid.transpose * resid / Double(n)
-                let mseAsDouble = mse[0,0]
-                print(mseAsDouble)
+                let vCov = try resid.transpose * resid / Double(n)
+                let var0 = vCov[0,0]
+                print(var0)
                 let y = Matrix(rows: n, cols: 1, valueArray: [12.2, 14.2, 23.2, 8.0, 9.2])
                 let x = try ones <|> data
                 let xx = try x.transpose * x
@@ -231,7 +225,6 @@
                 print("Looks like you have have a problem with multicolinearity.")
                 print("Better get some more data or drop some variables!")
             } catch MatrixError.nonconformingMatrices {
-                print("Something went wrong.")
                 print("Check your matrix dimensions.")
             } catch {
                 print("Something terrible has happened and I don't know what it is.")

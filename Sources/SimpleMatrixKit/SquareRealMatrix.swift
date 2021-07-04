@@ -1,5 +1,5 @@
 //
-//  NonsingularMatrix.swift
+//  SquareRealMatrix.swift
 //  
 //
 //  Created by Erik Heitfield on 6/15/21.
@@ -141,16 +141,12 @@ public struct SquareRealMatrix<Value: FloatingPoint> {
         let cols = self.cols
         for i in 0..<cols-1 {
             // swap rows to maximize pivot value
-            var maxIndex = i
-            var maxValue = abs(uRows[i,i])
             if i < cols-1 {
-                for n in i+1..<rows {
-                    let testVal = abs(uRows[n,i])
-                    if testVal > maxValue {
-                        maxIndex = n
-                        maxValue = testVal
-                    }
-                }
+                let (maxIndex,maxValue) = uRows
+                    .getCol(i)
+                    .enumerated()
+                    .dropFirst(i)
+                    .max { abs($0.1) < abs($1.1) }!
                 if maxValue == Value.zero {
                     throw MatrixError.factorizationUndefined
                 }

@@ -35,19 +35,18 @@ public func vCat<T: MatrixRepresentable, U: MatrixRepresentable, V>(_ m0: T, _ m
     return try hCat(m0.transpose, m1.transpose).transpose
 }
 
-precedencegroup MatrixConcatinationPrecedence {
+precedencegroup MatrixConcatenationPrecedence {
     associativity: left
     higherThan: RangeFormationPrecedence
     lowerThan: AdditionPrecedence
 }
 
-infix operator <|> : MatrixConcatinationPrecedence
+infix operator <|> : MatrixConcatenationPrecedence
 public func <|><T: MatrixRepresentable, U: MatrixRepresentable, V>(lhs: T, rhs: U) throws -> Matrix<V> where V == T.Value, T.Value == U.Value {
     return try hCat(lhs,rhs)
 }
 
-infix operator <-> : MatrixConcatinationPrecedence
+infix operator <-> : MatrixConcatenationPrecedence
 public func <-><T: MatrixRepresentable, U: MatrixRepresentable, V>(lhs: T, rhs: U) throws -> Matrix<V> where V == T.Value, T.Value == U.Value {
     return try vCat(lhs,rhs)
 }
-

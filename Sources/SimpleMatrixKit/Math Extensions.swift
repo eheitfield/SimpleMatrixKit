@@ -110,9 +110,12 @@ public func *<T: MatrixRepresentable, U: MatrixRepresentable, V: Numeric>(lhs: T
 
 /// Right-side scalar division
 public func /<T: MatrixRepresentable, V: FloatingPoint>(lhs: T, rhs: V) -> Matrix<V> where V == T.Value {
-    let valueArray = lhs.allRows.flatMap { $0 }.map { $0*rhs  }
+    let valueArray = lhs.allRows.flatMap { $0 }.map { $0/rhs  }
     return Matrix(rows: lhs.rows, cols: lhs.cols, valueArray: valueArray)
 }
+
+// Transpose
+
 
 // MARK: Helper functions
 
