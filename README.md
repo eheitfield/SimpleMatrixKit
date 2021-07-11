@@ -2,7 +2,7 @@
 
 ## Overview
 
-**SimpleMatrixKit** is an easy-to-use matrix library for Swift.  The library is built around a generic `Matrix` type which provides functionality for storing and manipulating balanced, two-dimensional arrays of objects.  This struct can be used in any circumstance where you might normally use an array of array types but would like to enforce the constraint that all inner arrays have the same length.  `Matrix` includes methods for accessing individual elements,  extracting submatrices, and producing derived matrices such as the matrix transpose.  `Matrix` can be treated as a `Collection`  where each element corresponds to a row of the matrix. The library includes two operators, `<|>` and `<->`, for horizontally and vertically concatenating appropriately conformable matrices.
+**SimpleMatrixKit** is an easy-to-use matrix library for Swift.  The library is built around a generic `Matrix` type which provides functionality for storing and manipulating balanced, two-dimensional arrays of objects.  This struct can be used in any circumstance where you might normally use an array of arrays but would like to enforce the constraint that all inner arrays have the same length.  `Matrix` includes methods for accessing individual elements,  extracting submatrices, and producing derived matrices such as the matrix transpose.  `Matrix` can be treated as a `Collection`  where each element corresponds to a row of the matrix. The library includes two operators, `<|>` and `<->`, for horizontally and vertically concatenating appropriately conformable matrices.
 
 More functionality is available for matrices of numerical values.  The library supports the standard matrix operators `+`, `-`, and `*` for matrices of `Numeric` types, which include both integers and floating point numbers. Most other linear algebra functionality requires that matrix values conform to the `FloatingPoint` protocol, which includes `Double`, `Float`, and `CGFloat`.  The `SquareRealMatrix` type provides properties and methods for working with square matrices. `SquareRealMatrix` types can report their determinants, traces, and LUP factorizations.  If they are nonsingular, they can be inverted or used for linear system solving. 
 
@@ -39,7 +39,7 @@ The residual covariance matrix is
 ```
 let vCov = try resid.transpose * resid / Double(n)
 ```
-`vCov is a 3 x 3 matrix with variances along the main diagonal.  We can use a subscript to extract the variance of the the first variable
+`vCov` is a 3 x 3 matrix with variances along the main diagonal.  We can use a subscript to extract the variance of the the first variable.
 ```
 let var0 = vCov[0,0]
 ```

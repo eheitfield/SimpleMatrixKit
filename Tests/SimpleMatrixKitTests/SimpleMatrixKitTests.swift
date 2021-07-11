@@ -222,9 +222,9 @@
                 let beta2 = try SquareRealMatrix(x.transpose*x).inverse() * x.transpose * y
                 print(beta2)
             } catch MatrixError.singularMatrixTreatedAsNonsingular {
-                print("Looks like you have have a problem with multicolinearity.")
+                print("Looks like you have a problem with multicolinearity.")
                 print("Better get some more data or drop some variables!")
-            } catch MatrixError.nonconformingMatrices {
+            } catch let  MatrixError.nonconformingMatrices {
                 print("Check your matrix dimensions.")
             } catch {
                 print("Something terrible has happened and I don't know what it is.")
